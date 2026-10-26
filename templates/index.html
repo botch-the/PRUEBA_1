@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block contenido %}
+
+<section class="portada">
+  <img src="{{ url_for('static', filename='img/banner.svg') }}" alt="Ilustración de portada">
+  <div class="portada-texto">
+    <h1>Muro de mensajes</h1>
+    <p>Escribe algo abajo. Se guarda en la base de datos y sigue aquí al recargar la página.</p>
+  </div>
+</section>
+
+{% with mensajes_flash = get_flashed_messages(with_categories=true) %}
+  {% for categoria, texto in mensajes_flash %}
+    <p class="aviso {{ categoria }}" role="status">{{ texto }}</p>
+  {% endfor %}
+{% endwith %}
+
+<section class="panel">
+  <h2>Nuevo mensaje</h2>
+  <form action="{{ url_for('agregar') }}" method="post" class="formulario">
+    <label for="nombre">Nombre</label>
+    <input id="nombre" name="nombre" maxlength="60" required>
+
+    <label for="texto">Mensaje</label>
+    <textarea id="texto" name="texto" maxlength="300" rows="3" required></textarea>
+
+    <button type="submit">Guardar mensaje</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Mensajes guardados ({{ mensajes|length }})</h2>
+
+  {% if mensajes %}
+    <ul class="lista">
+      {% for m in mensajes %}
+      <li class="mensaje">
+        <img src="{{ url_for('static', filename='img/avatar.svg') }}" alt="" width="44" height="44">
+        <div class="mensaje-cuerpo">
+          <strong>{{ m.nombre }}</strong>
+          <time>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</time>
+          <p>{{ m.texto }}</p>
+        </div>
+        <form action="{{ url_for('borrar', id=m.id) }}" method="post">
+          <button type="submit" class="borrar" aria-label="Eliminar mensaje de {{ m.nombre }}">Eliminar</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="vacio">Todavía no hay mensajes. Escribe el primero con el formulario de arriba.</p>
+  {% endif %}
+</section>
+
+{% endblock %}
