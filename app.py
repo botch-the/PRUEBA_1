@@ -9,72 +9,37 @@ app.secret_key = os.environ.get(
     "a8aaeb66a3dda5acf7eef75f7b2ad358ce34c24c9b83e2f65e18fdb951bd61a9",
 )
 
-# Configuración local por defecto (XAMPP)
-DB_USER = "root"
-DB_PASSWORD = ""
-DB_HOST = "localhost"
-DB_PORT = 3306
-DB_NAME = "prueba_db"
-
 
 def obtener_url_db():
-  # 1. Intentar usar las variables individuales que provee Railway
+  # 1. Buscar si Railway provee DATABASE_URL y asegurar el formato correcto
+  database_url = os.environ.get("DATABASE_URL")
+  if database_url:
+    # Limpiar espacios en blanco por si acaso
+    database_url = database_url.strip()
+    # Si viene con el protocolo viejo, lo actualizamos para pymysql
+    if database_url.startswith("mysql://"):
+      database_url = database_url.replace("mysql://", "mysql+pymysql://", 1)
+    elif not database_url.startswith("mysql+pymysql://"):
+      database_url = f"mysql+pymysql://{database_url}"
+    return database_url
+
+  # 2. Intentar con las variables independientes de Railway
   db_host = os.environ.get("MYSQLHOST")
   db_user = os.environ.get("MYSQLUSER")
   db_password = os.environ.get("MYSQLPASSWORD")
-  db_port = os.environ.get("MYSQLPORT")
+  db_port = os.environ.get("MYSQLPORT", "3306")
   db_name = os.environ.get("MYSQLDATABASE")
 
   if db_host and db_user and db_name:
-    return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port or 3306}/{db_name}"
+    return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
-  # 2. Si existe DATABASE_URL general
-  url = os.environ.get("DATABASE_URL")
-  if url:
-    return url.replace("mysql://", "mysql+pymysql://", 1)
-
-  # 3. Por defecto usar entorno local (XAMPP)
-  return (
-      f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-  )
-
-
-def crear_base_si_no_existe(url):
-  """Crea la base de datos en MySQL local si todavía no existe (Solo para XAMPP)."""
-  import pymysql
-  from sqlalchemy.engine import make_url
-
-  u = make_url(url)
-
-  # Si estamos en producción (Railway), el host no es localhost, así que omitimos esto
-  if u.host not in ["localhost", "127.0.0.1"]:
-    return
-
-  try:
-    conn = pymysql.connect(
-        host=u.host, port=u.port or 3306, user=u.username, password=u.password or ""
-    )
-  except pymysql.err.OperationalError as e:
-    raise SystemExit(
-        "\nNo se pudo conectar a MySQL local (XAMPP): %s\n"
-        "Abre el Panel de XAMPP y presiona Start en MySQL. "
-        "Si tiene contraseña o usa otro puerto, ajusta DB_PASSWORD / DB_PORT en"
-        " app.py.\n"
-        % e
-    )
-  with conn.cursor() as cur:
-    cur.execute(
-        f"CREATE DATABASE IF NOT EXISTS `{u.database}` "
-        "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-    )
-  conn.close()
+  # 3. Entorno local por defecto (XAMPP)
+  return "mysql+pymysql://root:@localhost:3306/prueba_db"
 
 
 URL_DB = obtener_url_db()
 
-# Solo intentamos crear la base si estamos en local
-crear_base_si_no_existe(URL_DB)
-
+# Configuración de SQLAlchemy
 app.config["SQLALCHEMY_DATABASE_URI"] = URL_DB
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
