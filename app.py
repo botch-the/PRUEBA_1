@@ -4,23 +4,23 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "cambia-esta-clave")
+app.secret_key = os.environ.get("SECRET_KEY", "a8aaeb66a3dda5acf7eef75f7b2ad358ce34c24c9b83e2f65e18fdb951bd61a9")
 
 # Base de datos MySQL local de XAMPP (usuario root, sin contraseña).
 # Si tu MySQL tiene contraseña o usa otro puerto, cambia los valores de abajo
 # o define la variable de entorno DATABASE_URL.
-DB_USUARIO = "root"
-DB_CLAVE = ""
+DB_USER = "root"
+DB_PASSWORD = ""
 DB_HOST = "localhost"
-DB_PUERTO = 3306
-DB_NOMBRE = "prueba_db"
+DB_PORT = 3306
+DB_NAME = "prueba_db"
 
 
 def obtener_url_db():
     url = os.environ.get("DATABASE_URL")
     if url:
         return url.replace("mysql://", "mysql+pymysql://", 1)
-    return f"mysql+pymysql://{DB_USUARIO}:{DB_CLAVE}@{DB_HOST}:{DB_PUERTO}/{DB_NOMBRE}"
+    return f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 def crear_base_si_no_existe(url):
@@ -37,7 +37,7 @@ def crear_base_si_no_existe(url):
         raise SystemExit(
             "\nNo se pudo conectar a MySQL: %s\n"
             "Abre el Panel de XAMPP y presiona Start en MySQL. "
-            "Si tiene contraseña o usa otro puerto, ajusta DB_CLAVE / DB_PUERTO en app.py.\n" % e
+            "Si tiene contraseña o usa otro puerto, ajusta DB_PASSWORD / DB_PORT en app.py.\n" % e
         )
     with conn.cursor() as cur:
         cur.execute(
