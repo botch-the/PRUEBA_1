@@ -18,10 +18,22 @@ DB_NAME = "prueba_db"
 
 
 def obtener_url_db():
+  # 1. Intentar usar las variables individuales que provee Railway
+  db_host = os.environ.get("MYSQLHOST")
+  db_user = os.environ.get("MYSQLUSER")
+  db_password = os.environ.get("MYSQLPASSWORD")
+  db_port = os.environ.get("MYSQLPORT")
+  db_name = os.environ.get("MYSQLDATABASE")
+
+  if db_host and db_user and db_name:
+    return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port or 3306}/{db_name}"
+
+  # 2. Si existe DATABASE_URL general
   url = os.environ.get("DATABASE_URL")
   if url:
-    # Railway a veces provee 'mysql://' pero SQLAlchemy requiere 'mysql+pymysql://'
     return url.replace("mysql://", "mysql+pymysql://", 1)
+
+  # 3. Por defecto usar entorno local (XAMPP)
   return (
       f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
   )
